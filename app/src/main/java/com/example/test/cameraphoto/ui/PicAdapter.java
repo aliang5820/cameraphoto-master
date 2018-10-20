@@ -11,6 +11,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.example.test.cameraphoto.Constant;
+import com.example.test.cameraphoto.FileUtils;
 import com.example.test.cameraphoto.R;
 import com.example.test.cameraphoto.mtp.PicInfo;
 import com.squareup.picasso.Picasso;
@@ -59,27 +60,10 @@ public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
         holder.view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mListener.onClick(importfile(mList.get(position).getObjectHandler()));
+                mListener.onClick(position);
             }
         });
     }
-
-
-    StringBuilder filePath = new StringBuilder();
-
-    public String importfile(int handler) {
-        filePath.setLength(0);
-        filePath.append(context.getCacheDir())
-                .append(File.separator)
-                .append(handler)
-                .append(".jpg");
-        if(Constant.mtpDevice!=null){
-            Constant.mtpDevice.importFile(handler,filePath.toString());
-            return filePath.toString();
-        }
-        return null;
-    }
-
 
     public void setData(List<PicInfo> list) {
         synchronized (obj) {
@@ -93,6 +77,9 @@ public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
         return mList.size();
     }
 
+    public List<PicInfo> getData() {
+        return mList;
+    }
 
     public static Object obj = new Object();
 
@@ -128,7 +115,7 @@ public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
     }
 
     interface OnItemClickListener {
-        void onClick(String path);
+        void onClick(int position);
     }
 
 

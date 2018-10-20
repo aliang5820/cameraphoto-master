@@ -1,48 +1,53 @@
-package com.example.test.cameraphoto;
+package com.example.test.cameraphoto.ui;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 
+import com.example.test.cameraphoto.R;
 import com.example.test.cameraphoto.mtp.MTPService;
-import com.example.test.cameraphoto.ui.EmptyFragment;
-import com.example.test.cameraphoto.ui.PhotoFragment;
+import com.example.test.cameraphoto.ui.base.BaseAct;
 
 import java.util.List;
 
+import butterknife.BindView;
 import io.reactivex.functions.Consumer;
 
-public class MainActivity extends AppCompatActivity implements Consumer<List>{
-
+public class CameraPicListAct extends BaseAct implements Consumer<List> {
+    @BindView(R.id.toolbar)
+    protected Toolbar mToolbar;
     private FragmentManager mFragmentManager;
-    EmptyFragment mEmptyFragment=new EmptyFragment();
-    PhotoFragment mPhotoFragment=new PhotoFragment();
+    EmptyFragment mEmptyFragment = new EmptyFragment();
+    PhotoFragment mPhotoFragment = new PhotoFragment();
     MTPService mService;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    protected int getLayout() {
+        return R.layout.act_camera;
+    }
+
+    @Override
+    protected void initEventAndData() {
+        setToolBar(mToolbar, "选择照片");
         permissioncheck();
         openFragment(mEmptyFragment);
-        mService=new MTPService(this);
+        mService = new MTPService(this);
     }
 
     private void permissioncheck() {
-        if(!checkPermissionAllGranted(  new String[] {
+        if (!checkPermissionAllGranted(new String[]{
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
-        })){
+        })) {
             ActivityCompat.requestPermissions(
                     this,
-                    new String[] {
+                    new String[]{
                             Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE
                     },
@@ -50,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements Consumer<List>{
             );
         }
     }
+
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
@@ -98,9 +104,9 @@ public class MainActivity extends AppCompatActivity implements Consumer<List>{
 
     @Override
     public void accept(List list) throws Exception {
-        if(list.size()<=0){
+        if (list.size() <= 0) {
             openFragment(mEmptyFragment);
-        }else{
+        } else {
             mPhotoFragment.setData(list);
             openFragment(mPhotoFragment);
         }

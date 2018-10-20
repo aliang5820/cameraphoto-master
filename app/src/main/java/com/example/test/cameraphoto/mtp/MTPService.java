@@ -60,7 +60,7 @@ public class MTPService {
             startScanPic();
 
         } else
-            showToast("请重新插拔连接设备");
+            showToast("无法获取存储设备，请重新插拔连接设备");
         registerReceiverMtp();
     }
 
@@ -129,8 +129,7 @@ public class MTPService {
             return;
         }
 
-        String msg = "isOpenMtp===" + isOpenMtp + usbDevice.getDeviceName();
-        showToast(msg);
+        //String msg = "isOpenMtp===" + isOpenMtp + usbDevice.getDeviceName();
         if (isOpenMtp) {
             Constant.mtpDevice = mMtpDevice;
             mAlert.hide();
@@ -144,12 +143,12 @@ public class MTPService {
     }
 
     public void startScanPic() {
-        disposable = Flowable.interval(8, TimeUnit.SECONDS)
+        showToast("已连接到存储设备,开始扫描!请稍后...");
+        disposable = Flowable.interval(4, TimeUnit.SECONDS)
                 .onBackpressureDrop()
                 .map(new Function<Long, List>() {
                     @Override
                     public List apply(Long aLong) throws Exception {
-                        showToast("start scan pic ===" + aLong);
                         List list = new ArrayList();
                         if (mMtpDevice != null) {
                             MtpDeviceInfo mtpDeviceInfo = mMtpDevice.getDeviceInfo();
@@ -160,13 +159,13 @@ public class MTPService {
                                 deviceSeriNumber = "xx";
                             int[] storageIds = mMtpDevice.getStorageIds();
                             if (storageIds == null) {
-                                showToast("获取相机存储空间失败");
+                                showToast("获取相机存储空间失败,正在重试");
                                 return list;
                             }
                             for (int storageId : storageIds) {
                                 int[] objectHandles = mMtpDevice.getObjectHandles(storageId, MtpConstants.FORMAT_EXIF_JPEG, 0);
                                 if (objectHandles == null) {
-                                    showToast("获取照片失败");
+                                    showToast("获取照片失败,正在重试");
                                     return list;
                                 }
                                 for (int objectHandle : objectHandles) {
@@ -208,7 +207,7 @@ public class MTPService {
                                 }
                             }
                         }
-                        showToast("result list:" + list.size());
+                        showToast("共扫描出" + list.size() + "张照片！");
                         return list;
                     }
                 }).subscribeOn(Schedulers.io())               //线程调度器,将发送者运行在子线程
@@ -224,9 +223,12 @@ public class MTPService {
         if (mMtpDevice != null) {
 //            mMtpDevice.close();
         }
-        if (disposable != null)
+        if (disposable != null && !disposable.isDisposed())
             disposable.dispose();
     }
 
-
+    public void stopScanPic() {
+        if (disposable != null && !disposable.isDisposed())
+            disposable.dispose();
+    }
 }
