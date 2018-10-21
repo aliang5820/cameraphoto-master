@@ -103,7 +103,7 @@ public class PhotoFrameAdapter extends PagerAdapter {
                                 if (sourceFile.exists()) {
                                     mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
                                     if (mFrameBitmap != null) {
-                                        mResultBitmap = BitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
+                                        mResultBitmap = BitmapUtil.newBitmap(mSourceBitmap, mFrameBitmap);
                                         return Flowable.just(mResultBitmap);
                                     } else {
                                         return Flowable.just(mSourceBitmap);

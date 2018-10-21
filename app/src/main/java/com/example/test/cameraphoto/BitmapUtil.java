@@ -21,7 +21,7 @@ import java.io.OutputStream;
 public class BitmapUtil {
     private static final String TAG = "BitmapUtil";
 
-    public static Drawable newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
+    public static Bitmap newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
         /*Bitmap retBmp;
         int width = frameBitmap.getWidth();
         if (sourceBitmap.getWidth() != width) {
@@ -48,15 +48,14 @@ public class BitmapUtil {
 
         float scale = frameBitmap.getHeight() / sourceBitmap.getHeight();
         Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
-        Log.e(TAG, "new bitmap:width:" + newSizeBmp2.getWidth() + "  height:" + newSizeBmp2.getHeight());
         array[1] = new BitmapDrawable(newSizeBmp2);
         LayerDrawable la = new LayerDrawable(array);
         // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
         la.setLayerInset(0, 0, 0, 0, 0);
         la.setLayerInset(1, 10, 10, 100, 10);
-        //return drawableToBitmap(la.mutate());
+        return drawableToBitmap(la.mutate());
 
-        return la.getCurrent();
+        //return la.mutate();
     }
 
     public static Bitmap resizeBitmap(Bitmap bitmap, float scale) {
