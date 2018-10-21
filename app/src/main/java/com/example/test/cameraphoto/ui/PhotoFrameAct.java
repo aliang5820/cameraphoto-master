@@ -2,6 +2,8 @@ package com.example.test.cameraphoto.ui;
 
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.support.v4.print.PrintHelper;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
@@ -26,11 +28,19 @@ import com.example.test.cameraphoto.R;
 import com.example.test.cameraphoto.ui.base.BaseAct;
 import com.squareup.picasso.Picasso;
 
+import org.reactivestreams.Publisher;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
+import io.reactivex.Flowable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * Created by Edison on 2018/10/13.
@@ -42,7 +52,8 @@ public class PhotoFrameAct extends BaseAct {
     protected ViewPager mViewPager;
     @BindView(R.id.grid)
     protected GridView frameGridView;
-    private PhotoFrameAdapter mAdapter;
+    private PhotoFrameAdapter mTopAdapter;
+    private FrameHorizontalAdapter mFrameAdapter;
     private List<Integer> sourceIdList;
     private Integer sourcePosition;
 
@@ -60,25 +71,23 @@ public class PhotoFrameAct extends BaseAct {
                 final EditText et = new EditText(mContext);
                 new AlertDialog
                         .Builder(mContext)
-                        .setTitle("请输入保存的文件名")
+                        .setTitle("确认保存该照片吗？")
                         .setView(et)
-                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        .setPositiveButton("保存", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                //按下确定键后的事件
-                                if (et.length() > 0) {
-                                    try {
-                                        String resultPath = Constant.PIC_PATH_RESULT + et.getText().toString() + ".jpg";
-                                        //FileUtils.writeImage(mTmpBmp, resultPath, 100);
-                                        //TODO 保存or打印照片
-                                        dialogInterface.dismiss();
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        Toast.makeText(mContext, "保存失败！", Toast.LENGTH_SHORT).show();
-                                    }
-                                }
+                                saveAction(false);
+                                dialogInterface.dismiss();
                             }
-                        }).setNegativeButton("取消", null).show();
+                        })
+                        .setNeutralButton("打印", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                saveAction(true);
+                                dialogInterface.dismiss();
+                            }
+                        })
+                        .setNegativeButton("取消", null).show();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -86,8 +95,9 @@ public class PhotoFrameAct extends BaseAct {
 
     @Override
     protected void onDestroy() {
-        if(mAdapter != null) {
-            mAdapter.clearDisposable();
+        if (mTopAdapter != null) {
+            mTopAdapter.clearDisposable();
+            mTopAdapter.recycleAllBitmap();
         }
         super.onDestroy();
     }
@@ -102,16 +112,8 @@ public class PhotoFrameAct extends BaseAct {
         setToolBar(mToolbar, "合成照片");
         sourceIdList = getIntent().getIntegerArrayListExtra(Constant.EXTRA_SOURCE);
         sourcePosition = getIntent().getIntExtra(Constant.EXTRA_KEY, 0);
-
-        /*BitmapFactory.Options mOption = new BitmapFactory.Options();
-        mOption.inSampleSize = 1;
-        mBitmap = BitmapFactory.decodeFile(sourcePicPath, mOption);
-        mTmpBmp = mBitmap;
-
-        reset();
-        mImageFrame = new PhotoFrame(this, mBitmap);*/
-        PhotoFrameAdapter adapter = new PhotoFrameAdapter(mContext, sourceIdList);
-        mViewPager.setAdapter(adapter);
+        mTopAdapter = new PhotoFrameAdapter(mContext, sourceIdList, null);
+        mViewPager.setAdapter(mTopAdapter);
         mViewPager.setCurrentItem(sourcePosition);
         mViewPager.setOffscreenPageLimit(1);
         initFrameList();
@@ -123,13 +125,17 @@ public class PhotoFrameAct extends BaseAct {
         final List<String> frameResData = FileUtils.getPicFileName(Constant.PIC_PATH_FRAME);
         //调用控制水平滚动的方法
         setHorizontalGridView(frameResData.size(), frameGridView);
-        final FrameHorizontalAdapter frameAdapter = new FrameHorizontalAdapter(frameResData);
-        frameGridView.setAdapter(frameAdapter);
+        mFrameAdapter = new FrameHorizontalAdapter(frameResData);
+        frameGridView.setAdapter(mFrameAdapter);
         frameGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                String framePath = Constant.PIC_PATH_FRAME + frameAdapter.getItem(position);
-                //TODO 切换相框
+                String framePath = Constant.PIC_PATH_FRAME + mFrameAdapter.getItem(position);
+                //切换相框
+                mTopAdapter = new PhotoFrameAdapter(mContext, sourceIdList, framePath);
+                int currentPosition = mViewPager.getCurrentItem();
+                mViewPager.setAdapter(mTopAdapter);
+                mViewPager.setCurrentItem(currentPosition);
             }
         });
     }
@@ -154,6 +160,48 @@ public class PhotoFrameAct extends BaseAct {
         gridView.setStretchMode(GridView.NO_STRETCH);
         gridView.setNumColumns(size); // 设置列数量=列表集合数
 
+    }
+
+    //保存
+    private void saveAction(final boolean isPrint) {
+        try {
+            final String resultPath = Constant.PIC_PATH_RESULT + System.currentTimeMillis() + ".jpg";
+            Disposable disposable = Flowable.just(mTopAdapter.getResultBitmap())
+                    .flatMap(new Function<Bitmap, Publisher<Boolean>>() {
+                        @Override
+                        public Publisher<Boolean> apply(Bitmap bitmap) throws Exception {
+                            try {
+                                FileUtils.writeImage(bitmap, resultPath, 100);
+                                return Flowable.just(true);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                return null;
+                            }
+                        }
+                    })
+                    .subscribeOn(Schedulers.io())//为上下游分别指定各自的线程
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Consumer<Boolean>() {
+                        @Override
+                        public void accept(Boolean isSuccess) throws Exception {
+                            //是否保存成功
+                            if (isSuccess) {
+                                Toast.makeText(mContext, "保存成功", Toast.LENGTH_SHORT).show();
+                                //是否需要打印
+                                if (isPrint) {
+                                    PrintHelper photoPrinter = new PrintHelper(mContext);
+                                    photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
+                                    Bitmap bitmap = BitmapFactory.decodeFile(resultPath);
+                                    photoPrinter.printBitmap("打印照片", bitmap);
+                                }
+                            } else {
+                                Toast.makeText(mContext, "保存失败", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     class FrameHorizontalAdapter extends BaseAdapter {

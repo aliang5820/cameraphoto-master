@@ -85,6 +85,6 @@ public class PrintPicListAct extends BaseAct {
         PrintHelper photoPrinter = new PrintHelper(this);
         photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
         Bitmap bitmap = BitmapFactory.decodeFile(path);
-        photoPrinter.printBitmap("droids.jpg - test print", bitmap);
+        photoPrinter.printBitmap("打印照片", bitmap);
     }
 }

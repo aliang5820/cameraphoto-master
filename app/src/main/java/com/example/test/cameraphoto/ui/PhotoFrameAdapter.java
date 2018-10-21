@@ -1,20 +1,24 @@
 package com.example.test.cameraphoto.ui;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
+import com.example.test.cameraphoto.BitmapUtil;
 import com.example.test.cameraphoto.FileUtils;
-import com.example.test.cameraphoto.R;
-import com.squareup.picasso.Picasso;
 
 import org.reactivestreams.Publisher;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
 
 import io.reactivex.Flowable;
@@ -30,14 +34,32 @@ import io.reactivex.schedulers.Schedulers;
  */
 public class PhotoFrameAdapter extends PagerAdapter {
     private Context mContext;
+    private Bitmap mSourceBitmap;
+    private Bitmap mFrameBitmap;
+    private Bitmap mResultBitmap;
     private List<Integer> mDataList;
     private SparseArray<Disposable> mSparseArray = new SparseArray<>();
     private CompositeDisposable mDisposables = new CompositeDisposable();
+    private BitmapFactory.Options mOptions;
+    private String mErrorMsg = "加载图片出错，请重新尝试";
 
-    public PhotoFrameAdapter(Context context, List<Integer> resIdList) {
+    public PhotoFrameAdapter(Context context, List<Integer> resIdList, String framePath) {
         super();
         mContext = context;
         mDataList = resIdList;
+        mOptions = new BitmapFactory.Options();
+        //如果这是非空的，解码器将尝试解码到这个颜色空间中。原图为ARGB_8888,设置其为RGB_565
+        mOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+        try {
+            File frameFile = new File(framePath);
+            if (frameFile.exists()) {
+                mFrameBitmap = BitmapFactory.decodeFile(framePath);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     @Override
@@ -70,21 +92,37 @@ public class PhotoFrameAdapter extends PagerAdapter {
             if (picObjectId != null) {
                 final ImageView itemView = new ImageView(mContext);
                 Disposable disposable = Flowable.just(picObjectId)
-                        .flatMap(new Function<Integer, Publisher<String>>() {
+                        .flatMap(new Function<Integer, Publisher<Bitmap>>() {
                             @Override
-                            public Publisher<String> apply(Integer s) throws Exception {
-                                return Flowable.just(FileUtils.importFile(mContext, s));
+                            public Publisher<Bitmap> apply(Integer s) throws Exception {
+                                if (mSourceBitmap != null) {
+                                    mSourceBitmap.recycle();
+                                }
+                                String sourcePath = FileUtils.importFile(mContext, s);
+                                File sourceFile = new File(sourcePath);
+                                if (sourceFile.exists()) {
+                                    mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
+                                    if (mFrameBitmap != null) {
+                                        mResultBitmap = BitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
+                                        return Flowable.just(mResultBitmap);
+                                    } else {
+                                        return Flowable.just(mSourceBitmap);
+                                    }
+                                } else {
+                                    return null;
+                                }
                             }
                         })
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Consumer<String>() {
+                        .subscribe(new Consumer<Bitmap>() {
                             @Override
-                            public void accept(String path) throws Exception {
-                                Picasso.get().load(new File(path))
-                                        .placeholder(R.drawable.progress_animation)
-                                        .error(R.drawable.ic_launcher_background)
-                                        .into(itemView);
+                            public void accept(Bitmap bitmap) throws Exception {
+                                if (bitmap != null) {
+                                    itemView.setImageBitmap(bitmap);
+                                } else {
+                                    Toast.makeText(mContext, mErrorMsg, Toast.LENGTH_SHORT).show();
+                                }
                             }
                         });
                 mSparseArray.put(position, disposable);
@@ -129,6 +167,16 @@ public class PhotoFrameAdapter extends PagerAdapter {
 
     public void clearDisposable() {
         mDisposables.clear();
+    }
+
+    public Bitmap getResultBitmap() {
+        return mResultBitmap;
+    }
+
+    public void recycleAllBitmap() {
+        mFrameBitmap.recycle();
+        mSourceBitmap.recycle();
+        mResultBitmap.recycle();
     }
 
     public void updateData(List<Integer> itemsResId) {

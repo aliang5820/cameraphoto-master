@@ -24,8 +24,11 @@ public class FileUtils {
                 .append(File.separator)
                 .append(handler)
                 .append(".jpg");
-        if(Constant.mtpDevice!=null){
-            Constant.mtpDevice.importFile(handler,filePath.toString());
+        String path = filePath.toString();
+        if (new File(path).exists()) {
+            return path;
+        } else if (Constant.mtpDevice != null) {
+            Constant.mtpDevice.importFile(handler, path);
             return filePath.toString();
         }
         return "";

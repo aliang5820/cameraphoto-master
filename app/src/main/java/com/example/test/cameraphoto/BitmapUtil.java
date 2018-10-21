@@ -1,14 +1,16 @@
 package com.example.test.cameraphoto;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.os.Environment;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,59 +19,67 @@ import java.io.OutputStream;
  * Created by Edison on 2018/10/19.
  */
 public class BitmapUtil {
+    private static final String TAG = "BitmapUtil";
 
-    private void merge() {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                File zhang = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "zhang.jpg");
-                File phil = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "phil.jpg");
-
-                try {
-                    Bitmap bitmap1 = BitmapFactory.decodeStream(new FileInputStream(zhang));
-                    Bitmap bitmap2 = BitmapFactory.decodeStream(new FileInputStream(phil));
-
-                    Bitmap newBmp = newBitmap(bitmap1, bitmap2);
-
-                    File zhangphil = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "zhangphil.jpg");
-                    if (!zhangphil.exists())
-                        zhangphil.createNewFile();
-                    save(newBmp, zhangphil, Bitmap.CompressFormat.JPEG, true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-
-    public static Bitmap newBitmap(Bitmap bmp1, Bitmap bmp2) {
-        Bitmap retBmp;
-        int width = bmp1.getWidth();
-        if (bmp2.getWidth() != width) {
+    public static Drawable newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
+        /*Bitmap retBmp;
+        int width = frameBitmap.getWidth();
+        if (sourceBitmap.getWidth() != width) {
             //以第一张图片的宽度为标准，对第二张图片进行缩放。
-            int h2 = bmp2.getHeight() * width / bmp2.getWidth();
-            retBmp = Bitmap.createBitmap(width, bmp1.getHeight() + h2, Bitmap.Config.ARGB_8888);
+            int h2 = sourceBitmap.getHeight() * width / sourceBitmap.getWidth();
+            retBmp = Bitmap.createBitmap(width, frameBitmap.getHeight() + h2, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(retBmp);
-            Bitmap newSizeBmp2 = resizeBitmap(bmp2, width, h2);
-            canvas.drawBitmap(bmp1, 0, 0, null);
-            canvas.drawBitmap(newSizeBmp2, 0, bmp1.getHeight(), null);
+            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, width, h2);
+            canvas.drawBitmap(frameBitmap, 0, 0, null);
+            canvas.drawBitmap(newSizeBmp2, 0, frameBitmap.getHeight(), null);
         } else {
             //两张图片宽度相等，则直接拼接。
-            retBmp = Bitmap.createBitmap(width, bmp1.getHeight() + bmp2.getHeight(), Bitmap.Config.ARGB_8888);
+            retBmp = Bitmap.createBitmap(width, frameBitmap.getHeight() + sourceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(retBmp);
-            canvas.drawBitmap(bmp1, 0, 0, null);
-            canvas.drawBitmap(bmp2, 0, bmp1.getHeight(), null);
+            canvas.drawBitmap(sourceBitmap, 0, 0, null);
+            canvas.drawBitmap(frameBitmap, 0, sourceBitmap.getHeight(), null);
+            *//*canvas.drawBitmap(frameBitmap, 0, 0, null);
+            canvas.drawBitmap(sourceBitmap, 0, frameBitmap.getHeight(), null);*//*
         }
-        return retBmp;
+        return retBmp;*/
+
+        Drawable[] array = new Drawable[2];
+        array[0] = new BitmapDrawable(frameBitmap);
+
+        float scale = frameBitmap.getHeight() / sourceBitmap.getHeight();
+        Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
+        Log.e(TAG, "new bitmap:width:" + newSizeBmp2.getWidth() + "  height:" + newSizeBmp2.getHeight());
+        array[1] = new BitmapDrawable(newSizeBmp2);
+        LayerDrawable la = new LayerDrawable(array);
+        // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
+        la.setLayerInset(0, 0, 0, 0, 0);
+        la.setLayerInset(1, 10, 10, 100, 10);
+        //return drawableToBitmap(la.mutate());
+
+        return la.getCurrent();
     }
 
-    public static Bitmap resizeBitmap(Bitmap bitmap, int newWidth, int newHeight) {
-        float scaleWidth = ((float) newWidth) / bitmap.getWidth();
-        float scaleHeight = ((float) newHeight) / bitmap.getHeight();
+    public static Bitmap resizeBitmap(Bitmap bitmap, float scale) {
         Matrix matrix = new Matrix();
-        matrix.postScale(scaleWidth, scaleHeight);
-        Bitmap bmpScale = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        return bmpScale;
+        matrix.postScale(scale, scale);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+    }
+
+    public static Bitmap drawableToBitmap(Drawable drawable) {
+
+        int w = drawable.getIntrinsicWidth();
+        int h = drawable.getIntrinsicHeight();
+        Log.e(TAG, "Drawable转Bitmap");
+        Bitmap.Config config =
+                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
+                        : Bitmap.Config.RGB_565;
+        Bitmap bitmap = Bitmap.createBitmap(w, h, config);
+        //注意，下面三行代码要用到，否则在View或者SurfaceView里的canvas.drawBitmap会看不到图
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, w, h);
+        drawable.draw(canvas);
+
+        return bitmap;
     }
 
     /**
