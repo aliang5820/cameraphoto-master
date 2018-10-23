@@ -45,17 +45,26 @@ public class BitmapUtil {
 
         Drawable[] array = new Drawable[2];
         array[0] = new BitmapDrawable(frameBitmap);
-
-        float scale = frameBitmap.getHeight() / sourceBitmap.getHeight();
-        Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
-        array[1] = new BitmapDrawable(newSizeBmp2);
-        LayerDrawable la = new LayerDrawable(array);
-        // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
-        la.setLayerInset(0, 0, 0, 0, 0);
-        la.setLayerInset(1, 10, 10, 100, 10);
+        LayerDrawable la;
+        if(frameBitmap.getWidth() > frameBitmap.getHeight()) {
+            float scale = (float) frameBitmap.getHeight() / sourceBitmap.getHeight();
+            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
+            array[1] = new BitmapDrawable(newSizeBmp2);
+            la = new LayerDrawable(array);
+            // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
+            la.setLayerInset(0, 0, 0, 0, 0);
+            la.setLayerInset(1, 20, 20, 100, 20);
+        } else {
+            //纵向
+            float scale = (float) frameBitmap.getWidth() / sourceBitmap.getWidth();
+            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
+            array[1] = new BitmapDrawable(newSizeBmp2);
+            la = new LayerDrawable(array);
+            // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
+            la.setLayerInset(0, 0, 0, 0, 0);
+            la.setLayerInset(1, 20, 20, 20, 400);
+        }
         return drawableToBitmap(la.mutate());
-
-        //return la.mutate();
     }
 
     public static Bitmap resizeBitmap(Bitmap bitmap, float scale) {

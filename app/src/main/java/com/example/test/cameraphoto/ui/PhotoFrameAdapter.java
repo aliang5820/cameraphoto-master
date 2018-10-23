@@ -3,7 +3,6 @@ package com.example.test.cameraphoto.ui;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.SparseArray;
@@ -18,7 +17,6 @@ import com.example.test.cameraphoto.FileUtils;
 import org.reactivestreams.Publisher;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.List;
 
 import io.reactivex.Flowable;
@@ -103,7 +101,7 @@ public class PhotoFrameAdapter extends PagerAdapter {
                                 if (sourceFile.exists()) {
                                     mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
                                     if (mFrameBitmap != null) {
-                                        mResultBitmap = BitmapUtil.newBitmap(mSourceBitmap, mFrameBitmap);
+                                        mResultBitmap = BitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
                                         return Flowable.just(mResultBitmap);
                                     } else {
                                         return Flowable.just(mSourceBitmap);
