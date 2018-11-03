@@ -110,5 +110,6 @@ public class CameraPicListAct extends BaseAct implements Consumer<List> {
             mPhotoFragment.setData(list);
             openFragment(mPhotoFragment);
         }
+        //mService.stopScanPic();
     }
 }

@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -56,6 +55,7 @@ public class PhotoFrameAct extends BaseAct {
     private FrameHorizontalAdapter mFrameAdapter;
     private List<Integer> sourceIdList;
     private Integer sourcePosition;
+    private Disposable disposable;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -68,11 +68,9 @@ public class PhotoFrameAct extends BaseAct {
         switch (item.getItemId()) {
             case R.id.ok:
                 //合成，并保存
-                final EditText et = new EditText(mContext);
                 new AlertDialog
                         .Builder(mContext)
                         .setTitle("确认保存该照片吗？")
-                        .setView(et)
                         .setPositiveButton("保存", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
@@ -99,6 +97,7 @@ public class PhotoFrameAct extends BaseAct {
             mTopAdapter.clearDisposable();
             mTopAdapter.recycleAllBitmap();
         }
+        disposable.dispose();
         super.onDestroy();
     }
 
@@ -122,7 +121,7 @@ public class PhotoFrameAct extends BaseAct {
     //初始化可选择的相框列表
     private void initFrameList() {
         //构建相框数据源
-        final List<String> frameResData = FileUtils.getPicFileName(Constant.PIC_PATH_FRAME);
+        final List<String> frameResData = FileUtils.getFrameFile(Constant.PIC_PATH_FRAME);
         //调用控制水平滚动的方法
         setHorizontalGridView(frameResData.size(), frameGridView);
         mFrameAdapter = new FrameHorizontalAdapter(frameResData);
@@ -130,7 +129,12 @@ public class PhotoFrameAct extends BaseAct {
         frameGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                String framePath = Constant.PIC_PATH_FRAME + mFrameAdapter.getItem(position);
+                String framePath;
+                if (Tools.isNullOrEmpty(mFrameAdapter.getItem(position))) {
+                    framePath = null;
+                } else {
+                    framePath = Constant.PIC_PATH_FRAME + mFrameAdapter.getItem(position);
+                }
                 //切换相框
                 mTopAdapter = new PhotoFrameAdapter(mContext, sourceIdList, framePath);
                 int currentPosition = mViewPager.getCurrentItem();
@@ -166,7 +170,7 @@ public class PhotoFrameAct extends BaseAct {
     private void saveAction(final boolean isPrint) {
         try {
             final String resultPath = Constant.PIC_PATH_RESULT + System.currentTimeMillis() + ".jpg";
-            Disposable disposable = Flowable.just(mTopAdapter.getResultBitmap())
+            disposable = Flowable.just(mTopAdapter.getResultBitmap())
                     .flatMap(new Function<Bitmap, Publisher<Boolean>>() {
                         @Override
                         public Publisher<Boolean> apply(Bitmap bitmap) throws Exception {
@@ -233,16 +237,20 @@ public class PhotoFrameAct extends BaseAct {
             if (convertView == null) {
                 convertView = LayoutInflater.from(mContext).inflate(R.layout.item_frame, null);
             }
-            String fileName = dataList.get(position);
-
             ImageView image = convertView.findViewById(R.id.icon);
             TextView textView = convertView.findViewById(R.id.text);
-            textView.setText(fileName);
 
-            Picasso.get().load(new File(Constant.PIC_PATH_FRAME + fileName))
-                    .placeholder(R.drawable.progress_animation)
-                    .error(R.drawable.ic_launcher_background)
-                    .into(image);
+            String fileName = dataList.get(position);
+            if (!Tools.isNullOrEmpty(fileName)) {
+                textView.setText(fileName);
+                Picasso.get().load(new File(Constant.PIC_PATH_FRAME + fileName))
+                        .placeholder(R.drawable.progress_animation)
+                        .error(R.drawable.ic_launcher_background)
+                        .into(image);
+            } else {
+                image.setBackgroundResource(R.color.secondaryText);
+                textView.setText(R.string.empty_frame);
+            }
             return convertView;
         }
     }

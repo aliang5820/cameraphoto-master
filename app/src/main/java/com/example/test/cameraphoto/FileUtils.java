@@ -4,6 +4,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 
+import com.example.test.cameraphoto.mtp.PicInfo;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -66,11 +68,11 @@ public class FileUtils {
     }
 
     //遍历指定文件夹下的所有照片
-    public static List<String> getPicFileName(String fileAbsolutePath) {
+    public static List<String> getFrameFile(String fileAbsolutePath) {
         Vector<String> vecFile = new Vector<>();
         File file = new File(fileAbsolutePath);
         File[] subFile = file.listFiles();
-
+        vecFile.add("");//默认加一个无边框
         for (int iFileLength = 0; iFileLength < subFile.length; iFileLength++) {
             // 判断是否为文件夹
             if (!subFile[iFileLength].isDirectory()) {
@@ -79,6 +81,29 @@ public class FileUtils {
                 if (filename.trim().toLowerCase().endsWith(".jpg") || filename.trim().toLowerCase().endsWith(".jpeg")
                         || filename.trim().toLowerCase().endsWith(".png")) {
                     vecFile.add(filename);
+                }
+            }
+        }
+        return vecFile;
+    }
+
+    //遍历指定文件夹下的所有照片
+    public static List<PicInfo> getPrintPicInfoList(String fileAbsolutePath) {
+        Vector<PicInfo> vecFile = new Vector<>();
+        File file = new File(fileAbsolutePath);
+        File[] subFile = file.listFiles();
+
+        for (int iFileLength = 0; iFileLength < subFile.length; iFileLength++) {
+            // 判断是否为文件夹
+            if (!subFile[iFileLength].isDirectory()) {
+                File tempFile = subFile[iFileLength];
+                String filename = tempFile.getName();
+                // 判断是否为
+                if (filename.trim().toLowerCase().endsWith(".jpg") || filename.trim().toLowerCase().endsWith(".jpeg")
+                        || filename.trim().toLowerCase().endsWith(".png")) {
+                    PicInfo picInfo = new PicInfo();
+                    picInfo.setmThumbnailPath(tempFile.getAbsolutePath());
+                    vecFile.add(picInfo);
                 }
             }
         }

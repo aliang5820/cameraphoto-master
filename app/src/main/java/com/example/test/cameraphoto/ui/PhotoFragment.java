@@ -63,7 +63,7 @@ public class PhotoFragment extends Fragment {
                             .resize(1280,720)
                             .placeholder(R.drawable.progress_animation)
                             .error(R.drawable.ic_launcher_background)
-                            .into((ImageView) mCustomDialog.findViewById(R.id.iv_img));
+                            .into((MyImageView) mCustomDialog.findViewById(R.id.iv_img));
                     mCustomDialog.show();*/
                     ArrayList<Integer> sourceIdList = new ArrayList<>();
                     for (PicInfo picInfo : adapter.getData()) {

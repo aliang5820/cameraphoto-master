@@ -1,13 +1,13 @@
 package com.example.test.cameraphoto;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.PixelFormat;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -20,74 +20,35 @@ import java.io.OutputStream;
  */
 public class BitmapUtil {
     private static final String TAG = "BitmapUtil";
+    private Context mContext;
 
-    public static Bitmap newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
-        /*Bitmap retBmp;
-        int width = frameBitmap.getWidth();
-        if (sourceBitmap.getWidth() != width) {
-            //以第一张图片的宽度为标准，对第二张图片进行缩放。
-            int h2 = sourceBitmap.getHeight() * width / sourceBitmap.getWidth();
-            retBmp = Bitmap.createBitmap(width, frameBitmap.getHeight() + h2, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(retBmp);
-            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, width, h2);
-            canvas.drawBitmap(frameBitmap, 0, 0, null);
-            canvas.drawBitmap(newSizeBmp2, 0, frameBitmap.getHeight(), null);
-        } else {
-            //两张图片宽度相等，则直接拼接。
-            retBmp = Bitmap.createBitmap(width, frameBitmap.getHeight() + sourceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(retBmp);
-            canvas.drawBitmap(sourceBitmap, 0, 0, null);
-            canvas.drawBitmap(frameBitmap, 0, sourceBitmap.getHeight(), null);
-            *//*canvas.drawBitmap(frameBitmap, 0, 0, null);
-            canvas.drawBitmap(sourceBitmap, 0, frameBitmap.getHeight(), null);*//*
-        }
-        return retBmp;*/
+    public BitmapUtil(Context context) {
+        this.mContext = context;
+    }
 
-        Drawable[] array = new Drawable[2];
-        array[0] = new BitmapDrawable(frameBitmap);
-        LayerDrawable la;
-        if(frameBitmap.getWidth() > frameBitmap.getHeight()) {
-            float scale = (float) frameBitmap.getHeight() / sourceBitmap.getHeight();
-            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
-            array[1] = new BitmapDrawable(newSizeBmp2);
-            la = new LayerDrawable(array);
-            // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
-            la.setLayerInset(0, 0, 0, 0, 0);
-            la.setLayerInset(1, 20, 20, 100, 20);
+    public Bitmap newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
+        Bitmap bitmap3 = Bitmap.createBitmap(frameBitmap.getWidth(), frameBitmap.getHeight(), frameBitmap.getConfig());
+        Canvas canvas = new Canvas(bitmap3);
+        if (frameBitmap.getWidth() > frameBitmap.getHeight()) {
+            //横向
+            int newHeight = frameBitmap.getHeight() - 60;
+            int newWidth = newHeight * 3 / 2;
+            Bitmap newSourceBitmap = Bitmap.createScaledBitmap(sourceBitmap, newWidth, newHeight, true);
+
+            canvas.drawBitmap(frameBitmap, new Matrix(), null);
+            canvas.drawBitmap(newSourceBitmap, 30, 30, null); //20、20为bitmap2写入点的x、y坐标
         } else {
             //纵向
-            float scale = (float) frameBitmap.getWidth() / sourceBitmap.getWidth();
-            Bitmap newSizeBmp2 = resizeBitmap(sourceBitmap, scale);
-            array[1] = new BitmapDrawable(newSizeBmp2);
-            la = new LayerDrawable(array);
-            // 其中第一个参数为层的索引号，后面的四个参数分别为left、top、right和bottom
-            la.setLayerInset(0, 0, 0, 0, 0);
-            la.setLayerInset(1, 20, 20, 20, 400);
+            int newWidth = frameBitmap.getWidth() - 60;
+            int newHeight = newWidth * 2 / 3;
+            Bitmap newSourceBitmap = Bitmap.createScaledBitmap(sourceBitmap, newWidth, newHeight, true);
+
+            canvas.drawBitmap(frameBitmap, new Matrix(), null);
+            canvas.drawBitmap(newSourceBitmap, 30, 30, null);
         }
-        return drawableToBitmap(la.mutate());
-    }
-
-    public static Bitmap resizeBitmap(Bitmap bitmap, float scale) {
-        Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-    }
-
-    public static Bitmap drawableToBitmap(Drawable drawable) {
-
-        int w = drawable.getIntrinsicWidth();
-        int h = drawable.getIntrinsicHeight();
-        Log.e(TAG, "Drawable转Bitmap");
-        Bitmap.Config config =
-                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888
-                        : Bitmap.Config.RGB_565;
-        Bitmap bitmap = Bitmap.createBitmap(w, h, config);
-        //注意，下面三行代码要用到，否则在View或者SurfaceView里的canvas.drawBitmap会看不到图
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, w, h);
-        drawable.draw(canvas);
-
-        return bitmap;
+        canvas.save(Canvas.ALL_SAVE_FLAG);
+        canvas.restore();
+        return bitmap3;
     }
 
     /**
@@ -99,7 +60,7 @@ public class BitmapUtil {
      * @param recycle 是否回收
      * @return true 成功 false 失败
      */
-    public static boolean save(Bitmap src, File file, Bitmap.CompressFormat format, boolean recycle) {
+    public boolean save(Bitmap src, File file, Bitmap.CompressFormat format, boolean recycle) {
         if (isEmptyBitmap(src))
             return false;
 
@@ -120,7 +81,7 @@ public class BitmapUtil {
     /**
      * Bitmap对象是否为空。
      */
-    public static boolean isEmptyBitmap(Bitmap src) {
+    public boolean isEmptyBitmap(Bitmap src) {
         return src == null || src.getWidth() == 0 || src.getHeight() == 0;
     }
 }

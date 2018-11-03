@@ -1,13 +1,17 @@
 apply plugin: 'com.android.application'
 
+def packageName = "com.example.test.cameraphoto"
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "com.example.test.cameraphoto"
+        applicationId "${packageName}"
         minSdkVersion 21
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        manifestPlaceholders = [
+                app_authorities: "${packageName}.fileProvider"
+        ]
     }
     buildTypes {
         release {

@@ -39,19 +39,27 @@ public class PhotoFrameAdapter extends PagerAdapter {
     private SparseArray<Disposable> mSparseArray = new SparseArray<>();
     private CompositeDisposable mDisposables = new CompositeDisposable();
     private BitmapFactory.Options mOptions;
+    private BitmapUtil mBitmapUtil;
     private String mErrorMsg = "加载图片出错，请重新尝试";
 
     public PhotoFrameAdapter(Context context, List<Integer> resIdList, String framePath) {
         super();
         mContext = context;
         mDataList = resIdList;
+        mBitmapUtil = new BitmapUtil(mContext);
         mOptions = new BitmapFactory.Options();
         //如果这是非空的，解码器将尝试解码到这个颜色空间中。原图为ARGB_8888,设置其为RGB_565
-        mOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+        mOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
         try {
-            File frameFile = new File(framePath);
-            if (frameFile.exists()) {
-                mFrameBitmap = BitmapFactory.decodeFile(framePath);
+            if (!Tools.isNullOrEmpty(framePath)) {
+                File frameFile = new File(framePath);
+                if (frameFile.exists()) {
+                    mFrameBitmap = BitmapFactory.decodeFile(framePath, mOptions);
+                } else {
+                    mFrameBitmap = null;
+                }
+            } else {
+                mFrameBitmap = null;
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -88,7 +96,7 @@ public class PhotoFrameAdapter extends PagerAdapter {
         if (mDataList != null && position < mDataList.size()) {
             Integer picObjectId = mDataList.get(position);
             if (picObjectId != null) {
-                final ImageView itemView = new ImageView(mContext);
+                final ImageView itemView = new MyImageView(mContext);
                 Disposable disposable = Flowable.just(picObjectId)
                         .flatMap(new Function<Integer, Publisher<Bitmap>>() {
                             @Override
@@ -101,9 +109,10 @@ public class PhotoFrameAdapter extends PagerAdapter {
                                 if (sourceFile.exists()) {
                                     mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
                                     if (mFrameBitmap != null) {
-                                        mResultBitmap = BitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
+                                        mResultBitmap = mBitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
                                         return Flowable.just(mResultBitmap);
                                     } else {
+                                        mResultBitmap = mSourceBitmap;
                                         return Flowable.just(mSourceBitmap);
                                     }
                                 } else {
@@ -172,9 +181,12 @@ public class PhotoFrameAdapter extends PagerAdapter {
     }
 
     public void recycleAllBitmap() {
-        mFrameBitmap.recycle();
-        mSourceBitmap.recycle();
-        mResultBitmap.recycle();
+        if (mFrameBitmap != null)
+            mFrameBitmap.recycle();
+        if (mSourceBitmap != null)
+            mSourceBitmap.recycle();
+        if (mResultBitmap != null)
+            mResultBitmap.recycle();
     }
 
     public void updateData(List<Integer> itemsResId) {

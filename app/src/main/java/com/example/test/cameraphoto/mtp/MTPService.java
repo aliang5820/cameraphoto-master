@@ -164,53 +164,51 @@ public class MTPService {
                             }
                             for (int storageId : storageIds) {
                                 int[] objectHandles = mMtpDevice.getObjectHandles(storageId, MtpConstants.FORMAT_EXIF_JPEG, 0);
-                                if (objectHandles == null) {
-                                    showToast("获取照片失败,正在重试");
-                                    return list;
-                                }
-                                for (int objectHandle : objectHandles) {
-                                    MtpObjectInfo mtpobj = mMtpDevice.getObjectInfo(objectHandle);
-                                    if (mtpobj == null) {
-                                        continue;
+                                if (objectHandles != null) {
+                                    for (int objectHandle : objectHandles) {
+                                        MtpObjectInfo mtpobj = mMtpDevice.getObjectInfo(objectHandle);
+                                        if (mtpobj == null) {
+                                            continue;
+                                        }
+                                        long dateCreated = mtpobj.getDateCreated();
+
+
+                                        byte[] bytes = mMtpDevice.getThumbnail(objectHandle);
+                                        filePath.setLength(0);
+                                        filePath.append(Environment.getExternalStorageDirectory().getAbsolutePath())
+                                                .append(File.separator)
+                                                .append("thumbCache")
+                                                .append(File.separator)
+                                                .append(String.valueOf(dateCreated))
+                                                .append(".jpg");
+                                        File fileJpg = new File(filePath.toString());
+                                        if (!fileJpg.exists() && bytes != null)
+                                            FileUtils.bytes2File(bytes, filePath.toString());
+
+                                        PicInfo info = new PicInfo();
+                                        info.setObjectHandler(objectHandle);
+                                        info.setmThumbnailPath(fileJpg.getAbsolutePath());
+                                        info.setmDateCreated(dateCreated);
+                                        info.setmImagePixWidth(mtpobj.getImagePixWidth());
+                                        info.setmImagePixHeight(mtpobj.getImagePixHeight());
+                                        info.setmImagePixDepth(mtpobj.getImagePixDepth());
+                                        info.setmThumbPixHeight(mtpobj.getThumbPixHeight());
+                                        info.setmThumbPixWidth(mtpobj.getThumbPixWidth());
+                                        info.setSequenceNumber(mtpobj.getSequenceNumber());
+                                        info.setKeyWords(mtpobj.getKeywords());
+                                        info.setmSerialNumber(deviceSeriNumber);
+                                        //                                        if(Long.toString(mtpobj.getDateCreated()).startsWith("15")){
+                                        //                                            mMtpDevice.deleteObject(objectHandle);
+                                        //                                        }
+                                        list.add(info);
                                     }
-                                    long dateCreated = mtpobj.getDateCreated();
-
-
-                                    byte[] bytes = mMtpDevice.getThumbnail(objectHandle);
-                                    filePath.setLength(0);
-                                    filePath.append(Environment.getExternalStorageDirectory().getAbsolutePath())
-                                            .append(File.separator)
-                                            .append("thumbCache")
-                                            .append(File.separator)
-                                            .append(String.valueOf(dateCreated))
-                                            .append(".jpg");
-                                    File fileJpg = new File(filePath.toString());
-                                    if (!fileJpg.exists() && bytes != null)
-                                        FileUtils.bytes2File(bytes, filePath.toString());
-
-                                    PicInfo info = new PicInfo();
-                                    info.setObjectHandler(objectHandle);
-                                    info.setmThumbnailPath(fileJpg.getAbsolutePath());
-                                    info.setmDateCreated(dateCreated);
-                                    info.setmImagePixWidth(mtpobj.getImagePixWidth());
-                                    info.setmImagePixHeight(mtpobj.getImagePixHeight());
-                                    info.setmImagePixDepth(mtpobj.getImagePixDepth());
-                                    info.setmThumbPixHeight(mtpobj.getThumbPixHeight());
-                                    info.setmThumbPixWidth(mtpobj.getThumbPixWidth());
-                                    info.setSequenceNumber(mtpobj.getSequenceNumber());
-                                    info.setKeyWords(mtpobj.getKeywords());
-                                    info.setmSerialNumber(deviceSeriNumber);
-                                    //                                        if(Long.toString(mtpobj.getDateCreated()).startsWith("15")){
-                                    //                                            mMtpDevice.deleteObject(objectHandle);
-                                    //                                        }
-                                    list.add(info);
                                 }
                             }
                         }
-                        showToast("共扫描出" + list.size() + "张照片！");
                         return list;
                     }
-                }).subscribeOn(Schedulers.io())               //线程调度器,将发送者运行在子线程
+                })
+                .subscribeOn(Schedulers.io())               //线程调度器,将发送者运行在子线程
                 .observeOn(AndroidSchedulers.mainThread())          //接受者运行在主线程
                 .subscribe((Consumer<? super List>) mContext);
     }
