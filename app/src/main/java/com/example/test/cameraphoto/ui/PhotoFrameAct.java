@@ -21,15 +21,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.test.cameraphoto.Constant;
 import com.example.test.cameraphoto.FileUtils;
 import com.example.test.cameraphoto.R;
 import com.example.test.cameraphoto.ui.base.BaseAct;
-import com.squareup.picasso.Picasso;
 
 import org.reactivestreams.Publisher;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -243,9 +242,8 @@ public class PhotoFrameAct extends BaseAct {
             String fileName = dataList.get(position);
             if (!Tools.isNullOrEmpty(fileName)) {
                 textView.setText(fileName);
-                Picasso.get().load(new File(Constant.PIC_PATH_FRAME + fileName))
-                        .placeholder(R.drawable.progress_animation)
-                        .error(R.drawable.ic_launcher_background)
+                Glide.with(mContext)
+                        .load(Constant.PIC_PATH_FRAME + fileName)
                         .into(image);
             } else {
                 image.setBackgroundResource(R.color.secondaryText);

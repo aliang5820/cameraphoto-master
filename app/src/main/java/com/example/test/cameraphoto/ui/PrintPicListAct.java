@@ -48,38 +48,6 @@ public class PrintPicListAct extends BaseAct {
     @Override
     protected void initEventAndData() {
         setToolBar(mToolbar, "打印照片");
-        //参考ArrayAdapter的构造函数
-            /*mListView.setAdapter(new ArrayAdapter<>(this,
-                    android.R.layout.simple_list_item_1,
-                    filesArray));
-            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    String fileName = filesArray[i];
-                    final String realPath = Constant.PIC_PATH_RESULT + fileName;
-                    if (new File(realPath).exists()) {
-                        AlertDialog dialog = new AlertDialog.Builder(mContext)
-                                .setTitle("提示")//设置对话框的标题
-                                .setMessage("是否确定打印：" + fileName)//设置对话框的内容
-                                //设置对话框的按钮
-                                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                })
-                                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                        doPhotoPrint(realPath);
-                                    }
-                                }).create();
-                        dialog.show();
-                    }
-                }
-            };*/
-
         disposable = Flowable.just("")
                 .map(new Function<String, List<PicInfo>>() {
                     @Override

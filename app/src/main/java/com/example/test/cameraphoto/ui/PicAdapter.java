@@ -10,13 +10,10 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import com.example.test.cameraphoto.Constant;
-import com.example.test.cameraphoto.FileUtils;
+import com.bumptech.glide.Glide;
 import com.example.test.cameraphoto.R;
 import com.example.test.cameraphoto.mtp.PicInfo;
-import com.squareup.picasso.Picasso;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,13 +23,9 @@ import java.util.List;
  */
 
 public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
-
-
     private List<PicInfo> mList = new ArrayList<>();
-
-    Context context;
-    RecyclerView mRecyclerView;
-
+    private Context context;
+    private RecyclerView mRecyclerView;
     int columns = 1;
 
     public PicAdapter(RecyclerView rv, Context context, List<PicInfo> list, int columns) {
@@ -40,7 +33,6 @@ public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
         this.columns = columns;
         this.context = context;
         setData(list);
-
     }
 
     @Override
@@ -56,7 +48,10 @@ public class PicAdapter extends RecyclerView.Adapter<PicAdapter.ViewHolder> {
         synchronized (obj) {
             image = mList.get(position);
         }
-        Picasso.get().load(new File(image.getmThumbnailPath())).into(holder.img);
+        //Picasso.get().load(new File(image.getmThumbnailPath())).into(holder.img);
+        Glide.with(context)
+                .load(image.getmThumbnailPath())
+                .into(holder.img);
         holder.view.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

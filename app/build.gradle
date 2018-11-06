@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 def packageName = "com.example.test.cameraphoto"
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     defaultConfig {
         applicationId "${packageName}"
         minSdkVersion 21
@@ -24,14 +24,15 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation project(':photoview')
-    implementation 'com.android.support:design:26.1.0'
-    implementation 'com.android.support:support-v4:26.1.0'
-    implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation 'com.android.support:recyclerview-v7:26.1.0'
-    implementation 'com.squareup.picasso:picasso:2.71828'
+    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support:support-v4:27.1.1'
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:recyclerview-v7:27.1.1'
     implementation 'io.reactivex.rxjava2:rxjava:2.2.2'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.0'
     implementation 'com.tbruyelle.rxpermissions2:rxpermissions:0.9.3@aar'
+    implementation 'com.github.bumptech.glide:glide:4.8.0'
     implementation 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
 }
