@@ -10,6 +10,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
 
@@ -89,32 +91,28 @@ public class FileUtils {
 
     //遍历指定文件夹下的所有照片
     public static List<PicInfo> getPrintPicInfoList(String fileAbsolutePath) {
-        Vector<PicInfo> vecFile = new Vector<>();
+        List<PicInfo> picInfoList = new ArrayList<>();
         File file = new File(fileAbsolutePath);
         File[] subFile = file.listFiles();
 
-        for (int iFileLength = 0; iFileLength < subFile.length; iFileLength++) {
+        for (File tempFile : subFile) {
             // 判断是否为文件夹
-            if (!subFile[iFileLength].isDirectory()) {
-                File tempFile = subFile[iFileLength];
+            if (!tempFile.isDirectory()) {
                 String filename = tempFile.getName();
                 // 判断是否为
                 if (filename.trim().toLowerCase().endsWith(".jpg") || filename.trim().toLowerCase().endsWith(".jpeg")
                         || filename.trim().toLowerCase().endsWith(".png")) {
                     PicInfo picInfo = new PicInfo();
                     picInfo.setmThumbnailPath(tempFile.getAbsolutePath());
-                    vecFile.add(picInfo);
+                    picInfo.setLastModified(tempFile.lastModified());
+                    picInfoList.add(picInfo);
                 }
             }
         }
-        return vecFile;
+        Collections.sort(picInfoList, new FileComparator());
+        return picInfoList;
     }
 
-    /**
-     * @param bitmap
-     * @param destPath
-     * @param quality
-     */
     public static void writeImage(Bitmap bitmap, String destPath, int quality) throws Exception {
         FileOutputStream out = null;
         try {

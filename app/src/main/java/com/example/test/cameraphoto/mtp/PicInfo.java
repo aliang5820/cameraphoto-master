@@ -18,43 +18,8 @@ public class PicInfo implements Serializable{
     private int objectHandler;
     //暂时放图片在相机中的路径
     private String  keyWords;
-
-    public String getmSerialNumber() {
-        return mSerialNumber;
-    }
-
-    public void setmSerialNumber(String mSerialNumber) {
-        this.mSerialNumber = mSerialNumber;
-    }
-
-    private String mSerialNumber;
-
-    public int getSequenceNumber() {
-        return sequenceNumber;
-    }
-
-    public void setSequenceNumber(int sequenceNumber) {
-        this.sequenceNumber = sequenceNumber;
-    }
-
-
-    public String getKeyWords() {
-        return keyWords;
-    }
-
-    public void setKeyWords(String keyWords) {
-        this.keyWords = keyWords;
-    }
-
-
-
-    public int getObjectHandler() {
-        return objectHandler;
-    }
-
-    public void setObjectHandler(int objectHandler) {
-        this.objectHandler = objectHandler;
-    }
+    private long lastModified;
+    private int mImagePixDepth;
 
     public String getmThumbnailPath() {
         return mThumbnailPath;
@@ -104,6 +69,38 @@ public class PicInfo implements Serializable{
         this.mImagePixHeight = mImagePixHeight;
     }
 
+    public int getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(int sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    public int getObjectHandler() {
+        return objectHandler;
+    }
+
+    public void setObjectHandler(int objectHandler) {
+        this.objectHandler = objectHandler;
+    }
+
+    public String getKeyWords() {
+        return keyWords;
+    }
+
+    public void setKeyWords(String keyWords) {
+        this.keyWords = keyWords;
+    }
+
+    public long getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
     public int getmImagePixDepth() {
         return mImagePixDepth;
     }
@@ -111,9 +108,6 @@ public class PicInfo implements Serializable{
     public void setmImagePixDepth(int mImagePixDepth) {
         this.mImagePixDepth = mImagePixDepth;
     }
-
-    private int mImagePixDepth;
-
 
     @Override
     public int hashCode() {

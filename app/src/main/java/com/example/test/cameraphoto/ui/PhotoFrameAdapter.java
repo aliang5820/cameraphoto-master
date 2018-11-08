@@ -46,7 +46,7 @@ public class PhotoFrameAdapter extends PagerAdapter {
         super();
         mContext = context;
         mDataList = resIdList;
-        mBitmapUtil = new BitmapUtil(mContext);
+        mBitmapUtil = new BitmapUtil();
         mOptions = new BitmapFactory.Options();
         //如果这是非空的，解码器将尝试解码到这个颜色空间中。原图为ARGB_8888,设置其为RGB_565
         mOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;

@@ -1,13 +1,8 @@
 package com.example.test.cameraphoto;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.drawable.Drawable;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.Toast;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -19,32 +14,30 @@ import java.io.OutputStream;
  * Created by Edison on 2018/10/19.
  */
 public class BitmapUtil {
-    private static final String TAG = "BitmapUtil";
-    private Context mContext;
-
-    public BitmapUtil(Context context) {
-        this.mContext = context;
-    }
 
     public Bitmap newBitmap(Bitmap frameBitmap, Bitmap sourceBitmap) {
         Bitmap bitmap3 = Bitmap.createBitmap(frameBitmap.getWidth(), frameBitmap.getHeight(), frameBitmap.getConfig());
         Canvas canvas = new Canvas(bitmap3);
         if (frameBitmap.getWidth() > frameBitmap.getHeight()) {
             //横向
-            int newHeight = frameBitmap.getHeight() - 60;
+            //计算边框间距
+            int frameSpace = (int) (frameBitmap.getHeight() * 0.815 / 10);
+            int newHeight = frameBitmap.getHeight() - frameSpace * 2;
             int newWidth = newHeight * 3 / 2;
             Bitmap newSourceBitmap = Bitmap.createScaledBitmap(sourceBitmap, newWidth, newHeight, true);
 
             canvas.drawBitmap(frameBitmap, new Matrix(), null);
-            canvas.drawBitmap(newSourceBitmap, 30, 30, null); //20、20为bitmap2写入点的x、y坐标
+            canvas.drawBitmap(newSourceBitmap, frameSpace, frameSpace, null); //20、20为bitmap2写入点的x、y坐标
         } else {
             //纵向
-            int newWidth = frameBitmap.getWidth() - 60;
+            //计算边框间距
+            int frameSpace = (int) (frameBitmap.getWidth() * 0.75 / 13);
+            int newWidth = frameBitmap.getWidth() - frameSpace * 2;
             int newHeight = newWidth * 2 / 3;
             Bitmap newSourceBitmap = Bitmap.createScaledBitmap(sourceBitmap, newWidth, newHeight, true);
 
             canvas.drawBitmap(frameBitmap, new Matrix(), null);
-            canvas.drawBitmap(newSourceBitmap, 30, 30, null);
+            canvas.drawBitmap(newSourceBitmap, frameSpace, frameSpace, null);
         }
         canvas.save(Canvas.ALL_SAVE_FLAG);
         canvas.restore();
