@@ -19,6 +19,7 @@ public class PicInfo implements Serializable{
     //暂时放图片在相机中的路径
     private String  keyWords;
     private long lastModified;
+    private String mSerialNumber;
     private int mImagePixDepth;
 
     public String getmThumbnailPath() {
@@ -99,6 +100,14 @@ public class PicInfo implements Serializable{
 
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
+    }
+
+    public String getmSerialNumber() {
+        return mSerialNumber;
+    }
+
+    public void setmSerialNumber(String mSerialNumber) {
+        this.mSerialNumber = mSerialNumber;
     }
 
     public int getmImagePixDepth() {

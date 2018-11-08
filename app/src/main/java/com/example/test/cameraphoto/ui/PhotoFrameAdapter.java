@@ -3,6 +3,8 @@ package com.example.test.cameraphoto.ui;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.SparseArray;
@@ -146,9 +148,6 @@ public class PhotoFrameAdapter extends PagerAdapter {
 
     @Override
     public void destroyItem(View container, int position, Object object) {
-        //注意：此处position是ViewPager中所有要显示的页面的position，与Adapter mDrawableResIdList并不是一一对应的。
-        //因为mDrawableResIdList有可能被修改删除某一个item，在调用notifyDataSetChanged()的时候，ViewPager中的页面
-        //数量并没有改变，只有当ViewPager遍历完自己所有的页面，并将不存在的页面删除后，二者才能对应起来
         if (object != null) {
             Disposable disposable = mSparseArray.get(position);
             if (disposable != null && !disposable.isDisposed()) {
@@ -158,9 +157,10 @@ public class PhotoFrameAdapter extends PagerAdapter {
             ViewGroup viewPager = ((ViewGroup) container);
             int count = viewPager.getChildCount();
             for (int i = 0; i < count; i++) {
-                View childView = viewPager.getChildAt(i);
-                if (childView == object) {
+                ImageView childView = (ImageView) viewPager.getChildAt(i);
+                if (childView != null) {
                     viewPager.removeView(childView);
+                    releaseImageViewResource(childView);
                     break;
                 }
             }
@@ -187,6 +187,18 @@ public class PhotoFrameAdapter extends PagerAdapter {
             mSourceBitmap.recycle();
         if (mResultBitmap != null)
             mResultBitmap.recycle();
+    }
+
+    private void releaseImageViewResource(ImageView imageView) {
+        if (imageView == null) return;
+        Drawable drawable = imageView.getDrawable();
+        if (drawable != null && drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            Bitmap bitmap = bitmapDrawable.getBitmap();
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+        }
     }
 
     public void updateData(List<Integer> itemsResId) {
