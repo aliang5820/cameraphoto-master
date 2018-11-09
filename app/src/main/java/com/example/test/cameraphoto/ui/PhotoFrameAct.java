@@ -4,13 +4,15 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v4.print.PrintHelper;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.example.test.cameraphoto.BitmapUtil;
 import com.example.test.cameraphoto.Constant;
 import com.example.test.cameraphoto.FileUtils;
 import com.example.test.cameraphoto.R;
@@ -29,12 +32,14 @@ import com.example.test.cameraphoto.ui.base.BaseAct;
 
 import org.reactivestreams.Publisher;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import io.reactivex.Flowable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
@@ -46,15 +51,24 @@ import io.reactivex.schedulers.Schedulers;
 public class PhotoFrameAct extends BaseAct {
     @BindView(R.id.toolbar)
     protected Toolbar mToolbar;
-    @BindView(R.id.viewPager)
-    protected ViewPager mViewPager;
+    /*@BindView(R.id.viewPager)
+    protected ViewPager mViewPager;*/
+    @BindView(R.id.image_view)
+    protected ImageView mImageView;
     @BindView(R.id.grid)
     protected GridView frameGridView;
-    private PhotoFrameAdapter mTopAdapter;
+    //private PhotoFrameAdapter mTopAdapter;
     private FrameHorizontalAdapter mFrameAdapter;
     private List<Integer> sourceIdList;
     private Integer sourcePosition;
-    private Disposable disposable;
+    private CompositeDisposable compositeDisposable;
+    private Bitmap mSourceBitmap;
+    private Bitmap mFrameBitmap;
+    private Bitmap mResultBitmap;
+    private BitmapFactory.Options mOptions;
+    private BitmapUtil mBitmapUtil;
+    private static final float FLIP_DISTANCE = 100;
+    private GestureDetector mDetector;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -92,11 +106,7 @@ public class PhotoFrameAct extends BaseAct {
 
     @Override
     protected void onDestroy() {
-        if (mTopAdapter != null) {
-            mTopAdapter.clearDisposable();
-            mTopAdapter.recycleAllBitmap();
-        }
-        disposable.dispose();
+        compositeDisposable.dispose();
         super.onDestroy();
     }
 
@@ -108,13 +118,77 @@ public class PhotoFrameAct extends BaseAct {
     @Override
     protected void initEventAndData() {
         setToolBar(mToolbar, "合成照片");
+        compositeDisposable = new CompositeDisposable();
         sourceIdList = getIntent().getIntegerArrayListExtra(Constant.EXTRA_SOURCE);
         sourcePosition = getIntent().getIntExtra(Constant.EXTRA_KEY, 0);
-        mTopAdapter = new PhotoFrameAdapter(mContext, sourceIdList, null);
-        mViewPager.setAdapter(mTopAdapter);
-        mViewPager.setCurrentItem(sourcePosition);
-        mViewPager.setOffscreenPageLimit(1);
+        initSource();
         initFrameList();
+    }
+
+    private void initSource() {
+        mBitmapUtil = new BitmapUtil();
+        mOptions = new BitmapFactory.Options();
+        //如果这是非空的，解码器将尝试解码到这个颜色空间中。原图为ARGB_8888,设置其为RGB_565
+        mOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Integer picObjectId = sourceIdList.get(sourcePosition);
+        String sourcePath = FileUtils.importFile(mContext, picObjectId);
+        //初始化默认图片
+        if (!Tools.isNullOrEmpty(sourcePath)) {
+            mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
+            mResultBitmap = mSourceBitmap;
+            mImageView.setImageBitmap(mResultBitmap);
+        }
+        mDetector = new GestureDetector(this, new GestureDetector.OnGestureListener() {
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public void onShowPress(MotionEvent e) {
+
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                return false;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (e1.getX() - e2.getX() > FLIP_DISTANCE) {
+                    Log.i(TAG, "向左滑...");
+                    if (sourcePosition > 0) {
+                        changeSource(sourceIdList.get(--sourcePosition));
+                    }
+                    return true;
+                }
+                if (e2.getX() - e1.getX() > FLIP_DISTANCE) {
+                    Log.i(TAG, "向右滑...");
+                    if (sourcePosition < sourceIdList.size() - 1) {
+                        changeSource(sourceIdList.get(++sourcePosition));
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return mDetector.onTouchEvent(event);
     }
 
     //初始化可选择的相框列表
@@ -135,12 +209,78 @@ public class PhotoFrameAct extends BaseAct {
                     framePath = Constant.PIC_PATH_FRAME + mFrameAdapter.getItem(position);
                 }
                 //切换相框
-                mTopAdapter = new PhotoFrameAdapter(mContext, sourceIdList, framePath);
-                int currentPosition = mViewPager.getCurrentItem();
-                mViewPager.setAdapter(mTopAdapter);
-                mViewPager.setCurrentItem(currentPosition);
+                changeFrame(framePath);
             }
         });
+    }
+
+    //切换原照片
+    private void changeSource(int picObjectId) {
+        Disposable disposable = Flowable.just(picObjectId)
+                .flatMap(new Function<Integer, Publisher<Bitmap>>() {
+                    @Override
+                    public Publisher<Bitmap> apply(Integer s) throws Exception {
+                        String sourcePath = FileUtils.importFile(mContext, s);
+                        File sourceFile = new File(sourcePath);
+                        if (sourceFile.exists()) {
+                            mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
+                            if (mFrameBitmap != null) {
+                                mResultBitmap = mBitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
+                                return Flowable.just(mResultBitmap);
+                            } else {
+                                mResultBitmap = mSourceBitmap;
+                                return Flowable.just(mSourceBitmap);
+                            }
+                        } else {
+                            throw new Exception("没有找到原图！");
+                        }
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Bitmap>() {
+                    @Override
+                    public void accept(Bitmap bitmap) {
+                        if (bitmap != null) {
+                            mImageView.setImageBitmap(bitmap);
+                        }
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+                });
+        compositeDisposable.add(disposable);
+    }
+
+    //切换相框
+    private void changeFrame(String framePath) {
+        if (!Tools.isNullOrEmpty(framePath)) {
+            File frameFile = new File(framePath);
+            if (frameFile.exists()) {
+                Disposable disposable = Flowable.just(framePath)
+                        .flatMap(new Function<String, Publisher<Bitmap>>() {
+                            @Override
+                            public Publisher<Bitmap> apply(String path) {
+                                mFrameBitmap = BitmapFactory.decodeFile(path, mOptions);
+                                mResultBitmap = mBitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
+                                return Flowable.just(mResultBitmap);
+                            }
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Consumer<Bitmap>() {
+                            @Override
+                            public void accept(Bitmap bitmap) {
+                                if (bitmap != null) {
+                                    mImageView.setImageBitmap(bitmap);
+                                }
+                            }
+                        });
+                compositeDisposable.add(disposable);
+            }
+        }
     }
 
     /**
@@ -169,10 +309,10 @@ public class PhotoFrameAct extends BaseAct {
     private void saveAction(final boolean isPrint) {
         try {
             final String resultPath = Constant.PIC_PATH_RESULT + System.currentTimeMillis() + ".jpg";
-            disposable = Flowable.just(mTopAdapter.getResultBitmap())
+            Disposable disposable = Flowable.just(mResultBitmap)
                     .flatMap(new Function<Bitmap, Publisher<Boolean>>() {
                         @Override
-                        public Publisher<Boolean> apply(Bitmap bitmap) throws Exception {
+                        public Publisher<Boolean> apply(Bitmap bitmap) {
                             try {
                                 FileUtils.writeImage(bitmap, resultPath, 100);
                                 return Flowable.just(true);
@@ -202,6 +342,7 @@ public class PhotoFrameAct extends BaseAct {
                             }
                         }
                     });
+            compositeDisposable.add(disposable);
         } catch (Exception e) {
             e.printStackTrace();
         }

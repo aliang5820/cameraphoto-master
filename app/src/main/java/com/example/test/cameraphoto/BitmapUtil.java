@@ -3,6 +3,9 @@ package com.example.test.cameraphoto;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.widget.ImageView;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -44,31 +47,16 @@ public class BitmapUtil {
         return bitmap3;
     }
 
-    /**
-     * 保存图片到文件File。
-     *
-     * @param src     源图片
-     * @param file    要保存到的文件
-     * @param format  格式
-     * @param recycle 是否回收
-     * @return true 成功 false 失败
-     */
-    public boolean save(Bitmap src, File file, Bitmap.CompressFormat format, boolean recycle) {
-        if (isEmptyBitmap(src))
-            return false;
-
-        OutputStream os;
-        boolean ret = false;
-        try {
-            os = new BufferedOutputStream(new FileOutputStream(file));
-            ret = src.compress(format, 100, os);
-            if (recycle && !src.isRecycled())
-                src.recycle();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void releaseImageViewResource(ImageView imageView) {
+        if (imageView == null) return;
+        Drawable drawable = imageView.getDrawable();
+        if (drawable != null && drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            Bitmap bitmap = bitmapDrawable.getBitmap();
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
         }
-
-        return ret;
     }
 
     /**

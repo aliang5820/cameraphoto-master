@@ -7,8 +7,14 @@
 
     <include layout="@layout/view_toolbar" />
 
-    <android.support.v4.view.ViewPager
+    <!--<android.support.v4.view.ViewPager
         android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />-->
+
+    <ImageView
+        android:id="@+id/image_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
@@ -23,7 +29,7 @@
             android:id="@+id/frameRes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal" >
+            android:orientation="horizontal">
 
             <GridView
                 android:id="@+id/grid"
@@ -31,8 +37,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center"
                 android:numColumns="auto_fit"
-                android:stretchMode="spacingWidthUniform" >
-            </GridView>
+                android:stretchMode="spacingWidthUniform" />
 
         </LinearLayout>
 
