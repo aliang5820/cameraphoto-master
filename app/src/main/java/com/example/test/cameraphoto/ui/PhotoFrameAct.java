@@ -134,7 +134,11 @@ public class PhotoFrameAct extends BaseAct {
         String sourcePath = FileUtils.importFile(mContext, picObjectId);
         //初始化默认图片
         if (!Tools.isNullOrEmpty(sourcePath)) {
+            int degree = mBitmapUtil.readPictureDegree(sourcePath);
             mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
+            if (degree > 0) {
+                mSourceBitmap = mBitmapUtil.rotateBitmap(mSourceBitmap, degree);
+            }
             mResultBitmap = mSourceBitmap;
             mImageView.setImageBitmap(mResultBitmap);
         }
@@ -223,7 +227,11 @@ public class PhotoFrameAct extends BaseAct {
                         String sourcePath = FileUtils.importFile(mContext, s);
                         File sourceFile = new File(sourcePath);
                         if (sourceFile.exists()) {
+                            int degree = mBitmapUtil.readPictureDegree(sourcePath);
                             mSourceBitmap = BitmapFactory.decodeFile(sourcePath, mOptions);
+                            if (degree > 0) {
+                                mSourceBitmap = mBitmapUtil.rotateBitmap(mSourceBitmap, degree);
+                            }
                             if (mFrameBitmap != null) {
                                 mResultBitmap = mBitmapUtil.newBitmap(mFrameBitmap, mSourceBitmap);
                                 return Flowable.just(mResultBitmap);
@@ -280,6 +288,11 @@ public class PhotoFrameAct extends BaseAct {
                         });
                 compositeDisposable.add(disposable);
             }
+        } else {
+            mResultBitmap = mSourceBitmap;
+            mImageView.setImageBitmap(mResultBitmap);
+            mFrameBitmap.recycle();
+            mFrameBitmap = null;
         }
     }
 

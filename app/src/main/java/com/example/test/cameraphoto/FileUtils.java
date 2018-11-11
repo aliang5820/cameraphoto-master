@@ -71,7 +71,7 @@ public class FileUtils {
 
     //遍历指定文件夹下的所有照片
     public static List<String> getFrameFile(String fileAbsolutePath) {
-        Vector<String> vecFile = new Vector<>();
+        List<String> vecFile = new ArrayList<>();
         File file = new File(fileAbsolutePath);
         File[] subFile = file.listFiles();
         vecFile.add("");//默认加一个无边框
