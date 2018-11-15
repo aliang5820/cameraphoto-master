@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
-def packageName = "com.example.test.cameraphoto"
+def packageName = "com.plc.cameraphoto"
+def appName = "拍立呈"
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -13,10 +14,34 @@ android {
                 app_authorities: "${packageName}.fileProvider"
         ]
     }
+
+    signingConfigs {
+        config {
+            storeFile file('D:/develop/cameraphoto-master/plc.jks')
+            storePassword "111111"
+            keyAlias "com.plc.cameraphoto"
+            keyPassword "111111"//将这里的“**”替换成自己的信息
+        }
+    }
+
     buildTypes {
-        release {
-            minifyEnabled false
+        //调试版
+        debug {
+            manifestPlaceholders = [app_label: "${appName}-测试"]
+            minifyEnabled false //不混淆
+            shrinkResources false //去除无用资源
+            signingConfig signingConfigs.config
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        //正式版
+        release {
+            manifestPlaceholders = [app_label: "${appName}"]
+            minifyEnabled false //混淆
+            shrinkResources false //去除无用资源
+            signingConfig signingConfigs.config
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
         }
     }
 }
