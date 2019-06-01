@@ -45,7 +45,7 @@ public class BitmapUtil {
             canvas.drawBitmap(frameBitmap, new Matrix(), null);
             canvas.drawBitmap(newSourceBitmap, frameSpace, frameSpace, null);
         }
-        canvas.save(Canvas.ALL_SAVE_FLAG);
+        canvas.save();
         canvas.restore();
         return bitmap3;
     }

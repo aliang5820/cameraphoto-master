@@ -19,4 +19,6 @@ public class Constant {
     public static String PIC_PATH_FRAME = PIC_PATH + "/frame/";
     public static String PIC_PATH_RESULT = PIC_PATH + "/result/";
     public static String PIC_PATH_CRASH = PIC_PATH + "/crash/";
+
+    public static int ALBUM_OK = 1001;
 }
